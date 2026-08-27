@@ -42,7 +42,7 @@ def test_zai_claude_code_smoke(workspace: Path, harness_home: Path) -> None:
     if shutil.which("claude") is None:
         pytest.skip("claude binary is not available")
 
-    model = os.environ.get("ZENITH_ZAI_SMOKE_MODEL", "glm-5.2[1m]")
+    model = os.environ.get("ZENITH_ZAI_SMOKE_MODEL", "glm-5.3-flash[1m]")
     base_url = (
         secret_env.get("ZAI_BASE_URL")
         or os.environ.get("ZAI_BASE_URL")
