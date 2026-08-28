@@ -19,6 +19,7 @@ import pytest
 from zenith_harness.acp_runner import (
     ACPNodeRunner,
     _acp_subprocess_env,
+    _apply_claude_acp_isolation,
     _augment_acp_command,
 )
 from zenith_harness.providers import PROVIDERS
@@ -175,6 +176,51 @@ def test_codex_acp_env_preserves_node_path_when_bwrap_is_present(
     assert str(bin_dir) in env["PATH"].split(os.pathsep)
     assert env["CODEX_SANDBOX"] == "danger-full-access"
     assert env["CODEX_DISABLE_SANDBOX"] == "1"
+
+
+def test_claude_acp_isolation_enabled_adds_sdk_options(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("ZENITH_CLAUDE_ACP_ISOLATION", "1")
+    mcp_servers = [{"name": "zenith-worker", "type": "http"}]
+    params = {"cwd": "/workspace", "mcpServers": mcp_servers}
+
+    isolated = _apply_claude_acp_isolation(params, PROVIDERS["claude"])
+
+    assert isolated["mcpServers"] is mcp_servers
+    assert isolated["_meta"] == {
+        "claudeCode": {
+            "options": {
+                "settingSources": [],
+                "strictMcpConfig": True,
+            }
+        }
+    }
+    assert "_meta" not in params
+
+
+def test_claude_acp_isolation_disabled_is_exact_no_op(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.delenv("ZENITH_CLAUDE_ACP_ISOLATION", raising=False)
+    params = {"cwd": "/workspace", "mcpServers": []}
+
+    result = _apply_claude_acp_isolation(params, PROVIDERS["claude"])
+
+    assert result is params
+    assert result == {"cwd": "/workspace", "mcpServers": []}
+
+
+def test_claude_acp_isolation_enabled_is_exact_no_op_for_codex(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("ZENITH_CLAUDE_ACP_ISOLATION", "1")
+    params = {"cwd": "/workspace", "mcpServers": []}
+
+    result = _apply_claude_acp_isolation(params, PROVIDERS["codex"])
+
+    assert result is params
+    assert result == {"cwd": "/workspace", "mcpServers": []}
 
 
 def test_attempt_path_naming(config: HarnessConfig, project_setup):

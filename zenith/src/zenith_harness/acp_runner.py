@@ -130,6 +130,35 @@ def _acp_subprocess_env(provider) -> dict[str, str]:
     return env
 
 
+def _apply_claude_acp_isolation(session_params: dict[str, Any], provider) -> dict[str, Any]:
+    """Opt Claude ACP sessions out of ambient settings and MCP discovery.
+
+    ``claude-agent-acp`` forwards ``_meta.claudeCode.options`` to the Claude
+    Code SDK.  The opt-in settings below keep the explicitly supplied
+    ``mcpServers`` while preventing user/project settings from adding connected
+    surfaces.  Disabled and non-Claude paths return the original object so the
+    feature is a strict no-op for existing sessions.
+    """
+    if (
+        getattr(provider, "name", None) != "claude"
+        or os.environ.get("ZENITH_CLAUDE_ACP_ISOLATION") != "1"
+    ):
+        return session_params
+
+    isolated_params = dict(session_params)
+    existing_meta = session_params.get("_meta")
+    meta = dict(existing_meta) if isinstance(existing_meta, dict) else {}
+    existing_claude_code = meta.get("claudeCode")
+    claude_code = dict(existing_claude_code) if isinstance(existing_claude_code, dict) else {}
+    existing_options = claude_code.get("options")
+    options = dict(existing_options) if isinstance(existing_options, dict) else {}
+    options.update({"settingSources": [], "strictMcpConfig": True})
+    claude_code["options"] = options
+    meta["claudeCode"] = claude_code
+    isolated_params["_meta"] = meta
+    return isolated_params
+
+
 _NOT_FOUND = object()
 
 
@@ -659,6 +688,7 @@ class ACPNodeRunner:
                 "mcpServers": [worker_mcp_cfg],
             }
             provider = role_config.worker_provider
+            session_params = _apply_claude_acp_isolation(session_params, provider)
             session_resp = await client.send_request("session/new", session_params)
             session_id = session_resp["sessionId"]
             await self._maybe_set_mode(client, session_id, provider)
@@ -812,6 +842,7 @@ class ACPNodeRunner:
                 "mcpServers": [worker_mcp_cfg],
             }
             provider = role_config.worker_provider
+            session_params = _apply_claude_acp_isolation(session_params, provider)
             session_resp = await client.send_request("session/new", session_params)
             session_id = session_resp["sessionId"]
             await self._maybe_set_mode(client, session_id, provider)
