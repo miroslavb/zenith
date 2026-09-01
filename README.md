@@ -8,7 +8,7 @@ Technical report from Intelligent Internet (2026) on how an agent harness should
 
 ## Host audit: assurance cost and alternatives
 
-A reproducible audit of 42 real host missions, including a Russian executive summary, full report, coverage manifest, and SQLite findings store, is available under [`analysis/zenith-host-audit/`](analysis/zenith-host-audit/). It distinguishes formal graph overhead, validator execution time, and protocol/runtime failures, then compares risk-tiered alternatives for product, infrastructure, and scientific work.
+A reproducible audit of 42 real host missions, including a Russian executive summary, full report, coverage manifest, SQLite findings store, and the implemented [opt-in Zenith routing policy](analysis/zenith-host-audit/ZENITH_ROUTING_POLICY_2026-09-01.md), is available under [`analysis/zenith-host-audit/`](analysis/zenith-host-audit/). It distinguishes formal graph overhead, validator execution time, and protocol/runtime failures, then compares risk-tiered alternatives for product, infrastructure, and scientific work.
 
 ## Abstract
 
