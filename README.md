@@ -6,6 +6,10 @@ Technical report from Intelligent Internet (2026) on how an agent harness should
 
 > **[Read the report (PDF)](technical_report/Technical_Report.pdf)**
 
+## Host audit: assurance cost and alternatives
+
+A reproducible audit of 42 real host missions, including a Russian executive summary, full report, coverage manifest, and SQLite findings store, is available under [`analysis/zenith-host-audit/`](analysis/zenith-host-audit/). It distinguishes formal graph overhead, validator execution time, and protocol/runtime failures, then compares risk-tiered alternatives for product, infrastructure, and scientific work.
+
 ## Abstract
 
 Long-running agents often fail not because they cannot make progress, but because they stop before the task is truly complete. We tested five harness designs across eight long-horizon tasks to isolate the control mechanisms that matter: repeated gap-finding, revisable planning, independent verification, adaptive orchestration, and stopping discipline.

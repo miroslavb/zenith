@@ -1,0 +1,98 @@
+{
+  "as_of": "2026-09-01",
+  "attempt_failure_share": 0.36,
+  "attempts_done": 727,
+  "attempts_failed": 409,
+  "attempts_missing_end_node": 267,
+  "attempts_rate_limited": 119,
+  "attempts_requesting_attention": 271,
+  "attempts_total": 1136,
+  "categories": {
+    "infrastructure_security": 14,
+    "product_software": 13,
+    "research_process_other": 3,
+    "scientific": 12
+  },
+  "category_infrastructure_security": {
+    "attempt_failure_share": 0.318,
+    "attempts": 261,
+    "done": 2,
+    "projects": 14,
+    "regressions": 42,
+    "tasks": 619,
+    "terminal_gap_headings": 6,
+    "validation_control_share": 0.6155
+  },
+  "category_product_software": {
+    "attempt_failure_share": 0.4007,
+    "attempts": 579,
+    "done": 6,
+    "projects": 13,
+    "regressions": 45,
+    "tasks": 901,
+    "terminal_gap_headings": 39,
+    "validation_control_share": 0.4384
+  },
+  "category_research_process_other": {
+    "attempt_failure_share": 0.2353,
+    "attempts": 34,
+    "done": 2,
+    "projects": 3,
+    "regressions": 3,
+    "tasks": 44,
+    "terminal_gap_headings": 0,
+    "validation_control_share": 0.4318
+  },
+  "category_scientific": {
+    "attempt_failure_share": 0.3282,
+    "attempts": 262,
+    "done": 8,
+    "projects": 12,
+    "regressions": 32,
+    "tasks": 329,
+    "terminal_gap_headings": 53,
+    "validation_control_share": 0.6383
+  },
+  "contracts": 1079,
+  "evidence_bytes": 1063064668,
+  "evidence_files": 14343,
+  "findings": 521,
+  "projects": 42,
+  "provider_exact_mission_references": {
+    "claude": 39,
+    "codex": 42,
+    "gstack": 3
+  },
+  "regressions": 122,
+  "robust_agent_hours": 436.597,
+  "robust_attempt_duration_median_seconds": 932.622,
+  "robust_attempt_duration_p90_seconds": 2925.78,
+  "robust_dispatch_wall_hours": 327.897,
+  "states": {
+    "aborted": 10,
+    "attention_needed": 7,
+    "done": 18,
+    "failed": 2,
+    "mission_planning": 1,
+    "mission_running": 4
+  },
+  "superseded_share": 0.2921,
+  "task_status": {
+    "cleared": 965,
+    "failed": 6,
+    "pending": 367,
+    "running": 2,
+    "superseded": 553
+  },
+  "tasks_by_type": {
+    "gate": 343,
+    "validate": 662,
+    "work": 888
+  },
+  "tasks_total": 1893,
+  "terminal_gap_headings": 98,
+  "terminal_reviews": 52,
+  "validation_control_nodes": 1005,
+  "validation_control_share": 0.5309,
+  "zenith_root": "/root/.zenith/projects"
+}
