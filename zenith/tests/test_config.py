@@ -18,6 +18,21 @@ def test_discover_defaults_to_four_parallel_nodes(
     config = HarnessConfig.discover()
 
     assert config.max_parallel_nodes == 4
+    assert config.resolved_codex_subscription_home == harness_home / "codex-subscription"
+    assert config.api_grants_file is None
+
+
+def test_discover_explicit_codex_auth_paths(monkeypatch, harness_home: Path) -> None:
+    subscription_home = harness_home / "subscription-auth"
+    grants_file = harness_home / "grants.json"
+    monkeypatch.setenv("ZENITH_HOME", str(harness_home))
+    monkeypatch.setenv("ZENITH_CODEX_SUBSCRIPTION_HOME", str(subscription_home))
+    monkeypatch.setenv("ZENITH_API_GRANTS_FILE", str(grants_file))
+
+    config = HarnessConfig.discover()
+
+    assert config.resolved_codex_subscription_home == subscription_home
+    assert config.api_grants_file == grants_file
 
 
 def test_discover_explicit_one_uses_serial_parallelism(
