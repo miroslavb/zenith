@@ -8,7 +8,7 @@ from pathlib import Path
 import click
 
 from .assets import AssetLoader, iter_skill_directories
-from .config import HarnessConfig
+from .config import VALID_REASONING_EFFORTS, HarnessConfig
 from .envelope import render_task_list
 from .providers import (
     ProviderDefinition,
@@ -19,7 +19,7 @@ from .providers import (
 )
 from .storage import ProjectStore
 
-MCP_ENV_FORWARD_ALLOWLIST = (
+RUNTIME_ENV_FORWARD_ALLOWLIST = (
     "ANTHROPIC_API_KEY",
     "ANTHROPIC_AUTH_TOKEN",
     "ANTHROPIC_BASE_URL",
@@ -34,6 +34,11 @@ MCP_ENV_FORWARD_ALLOWLIST = (
     "GLM_API_KEY",
     "GLM_BASE_URL",
     "MAX_THINKING_TOKENS",
+    "ZENITH_API_GRANTS_FILE",
+    "ZENITH_CODEX_SUBSCRIPTION_HOME",
+    "ZENITH_WORKER_REASONING_EFFORT",
+    "ZENITH_VALIDATOR_REASONING_EFFORT",
+    "ZENITH_TERMINAL_REVIEWER_REASONING_EFFORT",
     "ZAI_API_KEY",
     "ZAI_BASE_URL",
 )
@@ -71,6 +76,9 @@ def cli() -> None:
 @click.option("--validator-acp-command", default=None)
 @click.option("--terminal-reviewer-provider", type=click.Choice(provider_names_for_role("worker")), default=None)
 @click.option("--terminal-reviewer-acp-command", default=None)
+@click.option("--worker-reasoning-effort", type=click.Choice(VALID_REASONING_EFFORTS), default=None)
+@click.option("--validator-reasoning-effort", type=click.Choice(VALID_REASONING_EFFORTS), default=None)
+@click.option("--terminal-reviewer-reasoning-effort", type=click.Choice(VALID_REASONING_EFFORTS), default=None)
 @click.option("--zenith-home", type=click.Path(), default=None)
 @click.option("--workspace-dir", "workspace_dir", type=click.Path(exists=True), default=".")
 def init(
@@ -82,6 +90,9 @@ def init(
     validator_acp_command: str | None,
     terminal_reviewer_provider: str | None,
     terminal_reviewer_acp_command: str | None,
+    worker_reasoning_effort: str | None,
+    validator_reasoning_effort: str | None,
+    terminal_reviewer_reasoning_effort: str | None,
     zenith_home: str | None,
     workspace_dir: str,
 ) -> None:
@@ -109,7 +120,21 @@ def init(
 
     # 1) MCP / Codex config
     storage_env = _storage_env(zenith_home=zenith_home, workspace=workspace, selection=selection)
-    _write_bootstrap_config(workspace, selection, storage_env)
+    # Flags are sugar for the ZENITH_*_REASONING_EFFORT env vars and win over
+    # valid inherited shell settings. An invalid value already in the
+    # environment still fails fast at discover() above — flags override
+    # settings, they don't mask broken ones (the same validation would raise
+    # at server launch anyway).
+    effort_env = {
+        var: value
+        for var, value in (
+            ("ZENITH_WORKER_REASONING_EFFORT", worker_reasoning_effort),
+            ("ZENITH_VALIDATOR_REASONING_EFFORT", validator_reasoning_effort),
+            ("ZENITH_TERMINAL_REVIEWER_REASONING_EFFORT", terminal_reviewer_reasoning_effort),
+        )
+        if value
+    }
+    _write_bootstrap_config(workspace, selection, storage_env, effort_env)
 
     # 2) Per-provider agents + orchestrator prompt
     for provider in selection.providers():
@@ -269,7 +294,7 @@ def _echo_next_steps(orchestrator: ProviderDefinition) -> None:
     if prompt_path:
         click.echo("  2. Ask it:")
         click.echo(
-            f"     First Read the {prompt_path} and treat it as your primary role, then use Zenith to run this mission."
+            f"     First read {prompt_path} and treat it as your primary role, then use Zenith to run this mission."
         )
         click.echo("")
         click.echo("     <your instruction or query>")
@@ -311,10 +336,10 @@ def _storage_env(
     return env
 
 
-def _forwarded_mcp_env() -> dict[str, str]:
+def _forwarded_runtime_env() -> dict[str, str]:
     return {
         key: value
-        for key in MCP_ENV_FORWARD_ALLOWLIST
+        for key in RUNTIME_ENV_FORWARD_ALLOWLIST
         if (value := os.environ.get(key))
     }
 
@@ -353,12 +378,12 @@ def _write_bootstrap_config(
     workspace: Path,
     selection: ProviderSelection,
     storage_env: dict[str, str],
+    cli_env: dict[str, str],
 ) -> None:
     fmt = selection.orchestrator.config_format
-    env = {**selection.env(), **storage_env}
+    env = {**selection.env(), **storage_env, **_forwarded_runtime_env(), **cli_env}
     server_args = _mcp_server_args()
     if fmt == "mcp_json":
-        env = {**env, **_forwarded_mcp_env()}
         path = workspace / ".mcp.json"
         existing = (
             json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
@@ -374,7 +399,11 @@ def _write_bootstrap_config(
     elif fmt == "codex_config":
         config_path = workspace / ".codex" / "config.toml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
-        env_lines = "\n".join(f'{k} = "{v}"' for k, v in env.items())
+        # TOML basic strings share JSON's escape syntax, so json.dumps closes
+        # and escapes embedded quotes. ACP commands splice config via
+        # `-c key="value"`, and forwarded env values may hold quotes or
+        # backslashes; interpolating either raw emits invalid TOML.
+        env_lines = "\n".join(f"{k} = {json.dumps(v)}" for k, v in env.items())
         block = (
             'model = "gpt-5.5"\n'
             'sandbox_mode = "danger-full-access"\n'

@@ -154,8 +154,41 @@ def test_augment_acp_command_codex_does_not_append_bypass_flags():
     assert out == "codex-acp"
 
 
+def test_augment_acp_command_codex_reasoning_effort_override():
+    out = _augment_acp_command("codex-acp", PROVIDERS["codex"], reasoning_effort="medium")
+    assert out == "codex-acp"
+
+
+def test_codex_acp_reasoning_effort_uses_sanitized_adapter_config(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    monkeypatch.setenv(
+        "CODEX_CONFIG",
+        json.dumps(
+            {
+                "model_reasoning_effort": "max",
+                "sandbox_mode": "danger-full-access",
+                "approval_policy": "never",
+            }
+        ),
+    )
+
+    env = _acp_subprocess_env(
+        PROVIDERS["codex"],
+        ACPAuthContext(mode="subscription", codex_home=tmp_path / "codex-home"),
+        reasoning_effort="medium",
+    )
+
+    assert json.loads(env["CODEX_CONFIG"]) == {"model_reasoning_effort": "medium"}
+
+
 def test_augment_acp_command_claude_untouched():
     assert _augment_acp_command("claude-agent-acp", PROVIDERS["claude"]) == "claude-agent-acp"
+    assert (
+        _augment_acp_command("claude-agent-acp", PROVIDERS["claude"], reasoning_effort="low")
+        == "claude-agent-acp"
+    )
 
 
 def test_codex_acp_env_preserves_node_path_when_bwrap_is_present(

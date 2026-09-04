@@ -146,9 +146,9 @@ def _register_orchestrator_tools(mcp: FastMCP, controller: ProjectController) ->
         description=(
             "Submit the current mission's contract-backed task list. Before calling, "
             "write every targeted contract/<id>.md file under the mission contract "
-            "directory. Runtime validates task shape, depends_on resolution, "
-            "acyclicity, coverage (each assertion has exactly one non-superseded work "
-            "task). On success state becomes "
+            "directory. Runtime validates a non-empty contract, task shape, "
+            "depends_on resolution, acyclicity, coverage (each assertion has exactly "
+            "one non-superseded work task). On success state becomes "
             "mission_running; call advance_project to dispatch work."
         ),
     )

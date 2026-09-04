@@ -14,3 +14,7 @@
   Never store credential material in task JSON, receipts, prompts, or grant records.
 - Keep ACP and Zenith MCP child environments allowlisted. Only the exact Codex ACP
   child for an authorized API task may receive `OPENAI_API_KEY`.
+- Upstream `origin/main` is integrated through `2c26f6a`. Pass per-role Codex
+  reasoning effort through the sanitized `CODEX_CONFIG`; never restore trailing
+  `codex-acp -c` arguments, which the adapter ignores and which previously carried
+  unsafe sandbox and approval bypasses.

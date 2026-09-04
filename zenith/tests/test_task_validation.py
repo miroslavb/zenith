@@ -212,6 +212,19 @@ class TestValidateSubmission:
         errs = validate_task_list_submission({"X"}, tl)
         assert errs and errs[0].code == "empty_task_list"
 
+    def test_empty_contract_rejected(self) -> None:
+        # Targetless work tasks over an empty contract pass every other
+        # check vacuously; the contract itself must be non-empty.
+        tl = TaskList(tasks=[_task("w1", "work", [])])
+        errs = validate_task_list_submission(set(), tl)
+        assert errs and errs[0].code == "empty_contract"
+
+    def test_empty_contract_reported_before_empty_task_list(self) -> None:
+        # Contract authoring precedes task authoring; point at the
+        # earliest missing artifact first.
+        errs = validate_task_list_submission(set(), TaskList(tasks=[]))
+        assert errs and errs[0].code == "empty_contract"
+
     def test_validator_requires_targets(self) -> None:
         tl = TaskList(tasks=[
             _task("v1", "validate", []),

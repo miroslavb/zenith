@@ -98,23 +98,32 @@ class ACPError(Exception):
     pass
 
 
-def _augment_acp_command(command: str, provider) -> str:
+def _augment_acp_command(
+    command: str, provider, reasoning_effort: str | None = None
+) -> str:
     """Return the adapter command unchanged.
 
     Codex security settings live in the dedicated managed CODEX_HOME.  Appending
     CLI-style ``-c`` flags to ``codex-acp`` is both unenforced by the adapter and
     risks selecting the legacy danger-full-access sandbox path.
     """
-    del provider
+    del provider, reasoning_effort
     return command
 
 
 def _acp_subprocess_env(
-    provider, auth: ACPAuthContext | None = None
+    provider,
+    auth: ACPAuthContext | None = None,
+    reasoning_effort: str | None = None,
 ) -> dict[str, str]:
     """Build the allowlisted environment handed to an ACP subprocess."""
 
-    return build_acp_subprocess_env(provider, auth)
+    env = build_acp_subprocess_env(provider, auth)
+    if getattr(provider, "name", None) == "codex":
+        env["CODEX_CONFIG"] = json.dumps(
+            {"model_reasoning_effort": reasoning_effort or "xhigh"}
+        )
+    return env
 
 
 def _write_api_authorization_receipt(
@@ -634,7 +643,11 @@ class ACPNodeRunner:
             raise RuntimeError(
                 f"No ACP command for role={role}. Set ZENITH_{role.upper()}_ACP_COMMAND."
             )
-        acp_command = _augment_acp_command(acp_command, role_config.worker_provider)
+        acp_command = _augment_acp_command(
+            acp_command,
+            role_config.worker_provider,
+            role_config.worker_reasoning_effort,
+        )
 
         auth_context = prepare_acp_auth_context(
             config=role_config,
@@ -729,7 +742,11 @@ class ACPNodeRunner:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 cwd=workspace_dir,
-                env=_acp_subprocess_env(role_config.worker_provider, auth_context),
+                env=_acp_subprocess_env(
+                    role_config.worker_provider,
+                    auth_context,
+                    role_config.worker_reasoning_effort,
+                ),
                 limit=SUBPROCESS_STREAM_LIMIT,
             )
         except Exception:  # noqa: BLE001
@@ -869,7 +886,11 @@ class ACPNodeRunner:
                 "No ACP command for terminal reviewer. "
                 "Set ZENITH_TERMINAL_REVIEWER_ACP_COMMAND."
             )
-        acp_command = _augment_acp_command(acp_command, role_config.worker_provider)
+        acp_command = _augment_acp_command(
+            acp_command,
+            role_config.worker_provider,
+            role_config.worker_reasoning_effort,
+        )
 
         auth_context = prepare_acp_auth_context(
             config=role_config,
@@ -924,7 +945,11 @@ class ACPNodeRunner:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             cwd=workspace_dir,
-            env=_acp_subprocess_env(role_config.worker_provider, auth_context),
+            env=_acp_subprocess_env(
+                role_config.worker_provider,
+                auth_context,
+                role_config.worker_reasoning_effort,
+            ),
             limit=SUBPROCESS_STREAM_LIMIT,
         )
         tracker = ACPProgressTracker(callback=progress_callback)

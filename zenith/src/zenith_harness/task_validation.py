@@ -222,6 +222,17 @@ def validate_task_list_submission(
     tl: TaskList,
 ) -> list[ValidationError]:
     """Run all submit-time checks. Stops at the first failing check group."""
+    if not contract_ids:
+        # Without this, a plan of targetless work tasks over an empty
+        # contract/ dir satisfies every later check vacuously and the
+        # mission runs with no assertions, validators, or gates.
+        return [
+            ValidationError(
+                "empty_contract",
+                "mission has no contract assertions; write contract/<ID>.md "
+                "files before submit_plan",
+            )
+        ]
     if not tl.tasks:
         return [ValidationError("empty_task_list", "submit_plan requires at least one task")]
     errs = check_task_ids(tl)

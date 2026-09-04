@@ -383,6 +383,30 @@ class TestValidatorDissentFailsGate:
         assert "missing: VAL-001" in report
 
 
+class TestSubmitPlanValidation:
+    def test_contract_less_plan_rejected(
+        self, config: HarnessConfig, workspace: Path
+    ) -> None:
+        controller = ProjectController(
+            config,
+            MockDispatcher(
+                lambda req: WorkHandoff(node_id=req.task.id, done=True, report="ok")
+            ),
+            MockTerminalReviewer(TerminalReviewHandoff(done=True, report="")),
+        )
+        # Seed the project but author no contract assertion files.
+        controller.start_project("Brief.", str(workspace))
+        pid = controller.store.list_projects()[0].id
+
+        with pytest.raises(ToolError) as exc:
+            controller.submit_plan(pid, TaskList(tasks=[_task("w1", "work", [])]))
+        assert exc.value.code == "invalid_task_list"
+        assert any("empty_contract" in str(d) for d in (exc.value.details or []))
+
+        state = controller.store.load_state(pid)
+        assert state is not None and state.state == "mission_planning"
+
+
 class TestDecideAttentionValidation:
     def test_atomic_rejection(
         self, config: HarnessConfig, workspace: Path
